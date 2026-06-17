@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+
+
+  harness:
+    build:
+      context: .
+      args:
+        - USER_ID=${UID:-1000}
+        - GROUP_ID=${GID:-1000}
+    volumes:
+      - /srv/workspaceia:/workspace
+      - /home/david/.local/bin/agy:/usr/local/bin/agy:ro
+      - /home/david/.gemini:/root/.gemini
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - LANGCHAIN_TRACING_V2=false
+    working_dir: /workspace/.harness
+    command: npm run serve
+
+  dashboard:
+    image: node:20-bookworm
+    volumes:
+      - /srv/workspaceia:/workspace
+    working_dir: /workspace/.mas/dashboard
+    command: npm run dev
+    environment:
+      - VIRTUAL_HOST=mas.upsilon.andromede.synalter.fr
+      - VIRTUAL_PORT=3001
+    #ports:
+    #  - "3001:3001"
+    restart: unless-stopped
+    networks:
+      - default
+      - nginx-proxy
+
+networks:
+  default:
+  nginx-proxy:
+    external: true
