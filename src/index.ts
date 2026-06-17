@@ -15,13 +15,13 @@ function routeFromPlanning(state: typeof GraphState.State) {
   if (state.needsArchitect) return "architect";
   if (state.needsFront) return "devFront";
   if (state.needsBack) return "devBack";
-  return "qa";
+  return "leadtech";
 }
 
 function routeFromArchitect(state: typeof GraphState.State) {
   if (state.needsFront) return "devFront";
   if (state.needsBack) return "devBack";
-  return "qa";
+  return "leadtech";
 }
 
 function routeFromFront(state: typeof GraphState.State) {
@@ -51,12 +51,14 @@ export const workflow = new StateGraph(GraphState)
     "architect": "architect",
     "devFront": "devFront",
     "devBack": "devBack",
-    "qa": "qa"
+    "qa": "qa",
+    "leadtech": "leadtech"
   })
   .addConditionalEdges("architect", routeFromArchitect, {
     "devFront": "devFront",
     "devBack": "devBack",
-    "qa": "qa"
+    "qa": "qa",
+    "leadtech": "leadtech"
   })
   .addConditionalEdges("devFront", routeFromFront, {
     "devBack": "devBack",
