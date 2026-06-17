@@ -6,7 +6,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // Charge les variables d'environnement si on exécute ce script en standalone
 try {
-  const envFile = fs.readFileSync('/workspace/.mas/harness/.env', 'utf-8');
+  const envFile = fs.readFileSync(path.join(process.cwd(), '.env'), 'utf-8');
   envFile.split('\n').forEach(line => {
     const match = line.match(/^([^#=]+)=(.*)$/);
     if (match) process.env[match[1].trim()] = match[2].trim();
