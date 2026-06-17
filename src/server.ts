@@ -13,7 +13,7 @@ app.use(express.json());
 app.post('/api/workflow/start', (req, res) => {
   console.log("Démarrage du workflow LangGraph en tâche de fond...");
   const child = spawn('npx', ['ts-node', 'src/index.ts'], {
-    cwd: '/workspace/.mas/harness',
+    cwd: process.cwd(),
     detached: true,
     stdio: 'inherit'
   });
