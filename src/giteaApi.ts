@@ -34,7 +34,7 @@ export async function updateIssueLabel(issueNumber: number, labelName: string) {
     const resLabels = await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/labels`, { headers });
     const allLabels = await resLabels.json();
     const newStatusLabel = allLabels.find((l: any) => l.name === labelName);
-    
+
     if (newStatusLabel) {
       // 2. Fetch current issue to keep non-status labels
       const issueRes = await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/issues/${issueNumber}`, { headers });
@@ -52,7 +52,7 @@ export async function updateIssueLabel(issueNumber: number, labelName: string) {
         headers,
         body: JSON.stringify({ labels: newLabelIds })
       });
-      
+
       // Ping the webhook to trigger SSE real-time update
       try {
         await fetch('http://localhost:3002/api/workflow/webhook/update', { method: 'POST' });
@@ -150,13 +150,13 @@ export async function ensureLabelsExist() {
 
 export async function upsertIssue(title: string, body: string, labelIds: number[], milestoneId?: number) {
   if (!GITEA_TOKEN) return;
-  
+
   // Cherche si l'issue existe déjà
   const searchRes = await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/issues?state=all&q=${encodeURIComponent(title)}`, { headers });
   const issues = await searchRes.json();
-  
+
   const existing = issues.find((i: any) => i.title.trim() === title.trim());
-  
+
   if (existing) {
     console.log(`[GITEA API] Updating existing Issue #${existing.number} - ${title}`);
     await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/issues/${existing.number}`, {
@@ -186,9 +186,9 @@ export async function upsertMilestone(title: string, description: string) {
   if (!GITEA_TOKEN) return;
   const searchRes = await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/milestones?state=all`, { headers });
   const milestones = await searchRes.json();
-  
+
   const existing = milestones.find((m: any) => m.title.trim() === title.trim());
-  
+
   if (existing) {
     console.log(`[GITEA API] Updating Milestone - ${title}`);
     await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/milestones/${existing.id}`, {

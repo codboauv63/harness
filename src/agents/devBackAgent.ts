@@ -15,11 +15,8 @@ export async function devBackNode(state: typeof GraphState.State) {
 
   const skillInstructions = "---\nname: dev-back\ndescription: Act as the Backend Developer in the MAS system. You are responsible for implementing business logic, databases, and APIs.\n---\n\n# Backend Developer Agent Skill\n\nAs the Backend Developer, your role is to translate User Stories, Architectural Decisions, and DDD models into robust, tested, and secure backend code.\n\n## Your Context\nYour execution environment already injects the following into your prompt:\n- **Global PRD & Architecture:** The overall constraints.\n- **Epic Context:** The functional rules.\n- **Prompt History:** This is CRUCIAL. It contains the **Architect's decisions** (API contracts, DDD models, database schemas). You MUST read this history and implement exactly what the Architect defined.\n\n## Core Responsibilities\n1. **Implement Domain:** Write the Entities and Use Cases reflecting the functional rules.\n2. **Implement API:** Create the Controllers and Routes matching the Architect's OpenAPI contract.\n3. **Data Persistence:** Implement the repositories for database access.\n\n## Critical Rules\n- **Clean Architecture:** Strictly separate Domain (business logic), Application (use cases), and Infrastructure (controllers/DB).\n- **No Logic in Controllers:** Controllers must only handle I/O and routing. All business rules belong in the Domain/Application layers.\n- **Testing:** Write unit tests for your Domain/Use Cases.\n- **No Manual Trackers:** Do NOT reference or try to read `.mas/tracker`, `.mas/knowledge`, or `.mas/contracts`. All your instructions and models are provided directly in the Prompt History!\n";
 
-  const prompt = `=== CONTEXTE GÉNÉRAL DU PROJET (PRD) ===\n${projectContext}\n
-=== ARCHITECTURE GLOBALE ===\n${architectureContext}\n
-=== CONTEXTE DU DOMAINE (EPIC) ===\n${state.epicContext}\n
-=== INSTRUCTIONS DE L'AGENT ===\n${skillInstructions}\n
-Tu dois agir en tant que Dev Back.
+  const prompt = `=== CONTEXTE GÉNÉRAL DU PROJET (PRD) ===\n${projectContext}\n\n=== ARCHITECTURE GLOBALE ===\n${architectureContext}\n\n=== CONTEXTE DU DOMAINE (EPIC) ===\n${state.epicContext}\n\n=== USER STORY ===\n${state.userStoryBody}\n\n=== INSTRUCTIONS DE L'AGENT ===\n${skillInstructions}\n
+Tu dois agir en tant que Backend Developer.
 Tâche : Implémenter le code Backend pour la User Story ${state.userStoryId} du domaine ${state.boundedContext}.
 
 Retours précédents (QA/Leadtech) : ${state.leadtechFeedback.join(" | ")} ${state.qaFeedback.join(" | ")}

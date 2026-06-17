@@ -116,6 +116,7 @@ async function run() {
     const initialState = {
       issueNumber: us.number,
       userStoryId: usCode,
+      userStoryBody: us.body || "",
       boundedContext: us.title, // or extract from milestone title if needed
       humanFeedback,
       epicContext

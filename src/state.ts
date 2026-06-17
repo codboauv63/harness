@@ -3,6 +3,7 @@ import { Annotation } from "@langchain/langgraph";
 export const GraphState = Annotation.Root({
   issueNumber: Annotation<number>({ reducer: (x, y) => y ?? x, default: () => 0 }),
   userStoryId: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => "" }),
+  userStoryBody: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => "" }),
   boundedContext: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => "" }),
   epicContext: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => "" }),
   frontStatus: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => "pending" }),

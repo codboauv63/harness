@@ -10,7 +10,12 @@ export async function leadtechPlanningNode(state: typeof GraphState.State) {
   const projectContext = getProjectContext();
   const architectureContext = getArchitectureContext();
 
-  const prompt = `=== CONTEXTE GÉNÉRAL (PRD) ===\n${projectContext}\n\n=== ARCHITECTURE GLOBALE ===\n${architectureContext}\n\n=== CONTEXTE EPIC ===\n${state.epicContext}\n\nTu dois agir en tant que Leadtech. Ton rôle est d'analyser la User Story ${state.userStoryId} et de déterminer le workflow de développement.
+  const prompt = `=== CONTEXTE GÉNÉRAL (PRD) ===\n${projectContext}\n\n=== ARCHITECTURE GLOBALE ===\n${architectureContext}\n\n=== CONTEXTE EPIC ===\n${state.epicContext}\n\n=== USER STORY ===\n${state.userStoryBody}\n\nTu dois agir en tant que Leadtech. Ton rôle est d'analyser la User Story ${state.userStoryId} et de déterminer le workflow de développement.
+
+CRITICAL RULES:
+- DO NOT use any tools or commands to search the filesystem.
+- You already have all the context you need.
+- Output ONLY the JSON response.
 
 Analyse les besoins de cette US :
 - A-t-elle besoin de décisions architecturales (nouvelle table SQL, nouveau pattern, contrats d'API complexes) ? -> needsArchitect: true
