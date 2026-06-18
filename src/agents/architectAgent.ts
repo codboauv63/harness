@@ -4,6 +4,7 @@ import { updateIssueLabel, createIssueComment } from "../giteaApi";
 import { getProjectContext, getArchitectureContext } from "../utils/context";
 import { execSync } from "child_process";
 import { getRegistrySummary, getNextDocumentId, getDocumentContent, registerItem } from "../utils/registry";
+import { executeTests } from "./testRunnerNode";
 
 export async function architectNode(state: typeof GraphState.State) {
   console.log("--- ARCHITECT NODE ---");
@@ -15,6 +16,7 @@ export async function architectNode(state: typeof GraphState.State) {
   let parsed: any = null;
   let response = "";
   let documentContext = "";
+  let currentTestResults = state.testResults;
 
   while (loopCount < 5) {
     loopCount++;
@@ -72,7 +74,7 @@ Prochain ID DDD disponible : ${nextDddId}
 ${documentContext ? `\n=== CONTENU DU DOCUMENT DEMANDÉ ===\n${documentContext}\n` : ''}
 
 === DERNIERS RÉSULTATS DES TESTS ===
-${state.testResults}
+${currentTestResults}
 
 === INSTRUCTIONS DE L'AGENT ===
 ${skillInstructions}
@@ -84,7 +86,7 @@ Si tu as besoin de lire un document existant pour prendre ta décision, utilise 
 
 Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, suivant cette structure exacte :
 {
-  "status": "success" | "blocked" | "failed" | "need_document",
+  "status": "success" | "blocked" | "failed" | "need_document" | "need_tests",
   "documentId": "Optionnel. Requis si status=need_document (ex: ADR-0001)",
   "synthesis": "Résumé ultra-concis (2-3 phrases) de ce que tu as fait.",
   "productions": [
@@ -120,6 +122,10 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
         documentContext = `Erreur : Le document ${parsed.documentId} n'a pas été trouvé.`;
       }
       continue; // loop again
+    } else if (parsed.status === "need_tests") {
+      console.log(`[ARCHITECT] Execution des tests demandée...`);
+      currentTestResults = await executeTests(true, true);
+      continue;
     } else {
       break; // final response
     }
@@ -212,7 +218,7 @@ ${documentContext ? `\n=== CONTENU DU DOCUMENT DEMANDÉ ===\n${documentContext}\
 
 Format JSON attendu :
 {
-  "status": "need_details" | "ready" | "need_document",
+  "status": "need_details" | "ready" | "need_document" | "need_tests",
   "documentId": "Optionnel. Requis si status=need_document (ex: ADR-0001, US-001)",
   "reply": "Ton message textuel pour l'utilisateur (explication, questions, etc.)",
   "architectureUpdate": "OPTIONNEL. Le document d'Architecture Globale mis à jour au format Markdown (si la discussion amène à une modification structurelle). Laisse vide si non nécessaire."
@@ -226,9 +232,17 @@ Format JSON attendu :
     });
     prompt += `\nARCHITECT (toi):`;
 
+    const lastUserMessage = messages.filter(m => m.role === "user").pop()?.content || "Aucun message utilisateur";
+    const contextSummary = [];
+    if (projectContext) contextSummary.push("PRD");
+    if (architectureContext) contextSummary.push("Architecture");
+    if (issueContext) contextSummary.push("Ticket Context");
+    if (documentContext) contextSummary.push("Document demandé");
+    
     console.log(`\n\x1b[36m========== 📩 PROMPT ENVOYÉ AU ARCHITECT CHAT (Loop ${loopCount}) ==========\x1b[0m`);
-    // Ne pas logger tout le prompt pour ne pas spammer, juste un résumé
-    console.log(`\x1b[90m[Prompt length: ${prompt.length} chars]\x1b[0m`);
+    console.log(`\x1b[90m[Total length: ${prompt.length} chars]\x1b[0m`);
+    console.log(`\x1b[90m[Includes: ${contextSummary.join(", ")}]\x1b[0m`);
+    console.log(`\x1b[33mUSER REQUEST: ${lastUserMessage.substring(0, 200)}${lastUserMessage.length > 200 ? '...' : ''}\x1b[0m`);
     console.log(`\x1b[36m========================================================\x1b[0m\n`);
 
     const result = await new Promise<any>((resolve, reject) => {
@@ -297,6 +311,12 @@ Format JSON attendu :
         messages.push({ role: "user", content: documentContext });
       }
       continue; // loop again
+    } else if (parsed.status === "need_tests") {
+      console.log(`[ARCHITECT CHAT] Execution des tests demandée...`);
+      const results = await executeTests(true, true);
+      messages.push({ role: "assistant", content: `(Je demande l'exécution des tests automatisés)` });
+      messages.push({ role: "user", content: `Voici les résultats des tests:\n${results}` });
+      continue;
     } else {
       break; // final response
     }

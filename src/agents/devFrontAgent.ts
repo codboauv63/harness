@@ -3,6 +3,7 @@ import { runAgyCommand } from "../utils/agy";
 import { updateIssueLabel, createIssueComment } from "../giteaApi";
 import { getProjectContext, getArchitectureContext } from "../utils/context";
 import { execSync } from "child_process";
+import { executeTests } from "./testRunnerNode";
 
 export async function devFrontNode(state: typeof GraphState.State) {
   console.log("--- DEV FRONT NODE ---");
@@ -15,7 +16,13 @@ export async function devFrontNode(state: typeof GraphState.State) {
 
   const skillInstructions = "---\nname: dev-front\ndescription: Act as the Frontend Developer in the MAS system. You are responsible for implementing User Interfaces.\n---\n\n# Frontend Developer Agent Skill\n\nAs the Frontend Developer, your role is to translate User Stories, Architectural Decisions, and API contracts into working, tested, and maintainable frontend code.\n\n## Your Context\nYour execution environment already injects the following into your prompt:\n- **Global PRD & Architecture:** The overall constraints.\n- **Epic Context:** The functional rules.\n- **Prompt History:** This is CRUCIAL. It contains the **Architect's decisions** (API contracts, data models) and potentially the **Dev Back's implementation**. You MUST read this history to know what endpoints to call and what models to use.\n\n## Core Responsibilities\n1. **Implement UI:** Slice the requirements into small, single-responsibility components (e.g., Vue 3).\n2. **Integrate Logic:** Connect the UI to the API endpoints defined by the Architect in the Prompt History.\n3. **Mocking (if needed):** If the Backend is not yet developed, use mocking tools (like MSW) based on the Architect's contract.\n\n## Critical Rules\n- **Mobile First:** Always code the UI with a \"Mobile First\" approach.\n- **Code Coverage:** Write unit tests for your components. 100% coverage is the target.\n- **No Direct Execution:** Do not worry about running commands or setting up trackers. You are in an automated pipeline. Write the code, and your output will be synced.\n- **No Manual Trackers:** Do NOT reference or try to read `.mas/tracker` or `.mas/contracts`. All your instructions and contracts are provided directly in the Prompt History!\n";
 
-  // 2. Lancer l'agent
+  let loopCount = 0;
+  let parsed: any = null;
+  let response = "";
+  let currentTestResults = state.testResults;
+
+  while (loopCount < 5) {
+    loopCount++;
   const prompt = `=== CONTEXTE GÉNÉRAL DU PROJET (PRD) ===\n${projectContext}\n\n=== ARCHITECTURE GLOBALE ===\n${architectureContext}\n\n=== CONTEXTE DU DOMAINE (EPIC) ===\n${state.epicContext}\n\n=== USER STORY ===\n${state.userStoryBody}\n\n=== INSTRUCTIONS DE L'AGENT ===\n${skillInstructions}\n
 Tu dois agir en tant que Frontend Developer.
 Tâche : Implémenter le code Frontend pour la User Story ${state.userStoryId} du domaine ${state.boundedContext}.
@@ -28,7 +35,7 @@ Historique des agents précédents (TRÈS IMPORTANT pour lire les directives de 
 ${state.messages.map((m: any) => `${m.role} : ${m.content}`).join("\n\n")}
 
 === DERNIERS RÉSULTATS DES TESTS ===
-${state.testResults}
+${currentTestResults}
 
 Règles critiques :
 1. Mobile First & Validation Visuelle stricte.
@@ -36,7 +43,7 @@ Règles critiques :
 
 Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, suivant cette structure exacte :
 {
-  "status": "success" | "blocked" | "failed",
+  "status": "success" | "blocked" | "failed" | "need_tests",
   "synthesis": "Résumé ultra-concis (2-3 phrases) de ce que tu as codé.",
   "productions": [
     {
@@ -47,7 +54,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
 }`;
 
   console.log("BEFORE AGY", Date.now());
-  const response = await runAgyCommand(prompt);
+  response = await runAgyCommand(prompt);
   console.log("AFTER AGY", Date.now());
 
   let parsed: any = { status: "success", synthesis: response, productions: [] };
@@ -59,7 +66,17 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
     parsed = JSON.parse(text.trim());
   } catch (e) {
     console.error("Failed to parse DevFront response, defaulting to raw response", e);
+    break;
   }
+
+  if (parsed.status === "need_tests") {
+    console.log(`[DEV-FRONT] Execution des tests demandée (Loop ${loopCount})...`);
+    currentTestResults = await executeTests(true, true);
+    continue; // loop again with new results
+  } else {
+    break; // final response
+  }
+} // end while
 
   // Capture modified files
   let modifiedFiles = "";

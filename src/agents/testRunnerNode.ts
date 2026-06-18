@@ -15,11 +15,10 @@ async function runSshCommand(ip: string, keyFile: string, command: string): Prom
   }
 }
 
-export async function testRunnerNode(state: typeof GraphState.State) {
-  console.log("--- TEST RUNNER NODE ---");
+export async function executeTests(needsBack: boolean, needsFront: boolean): Promise<string> {
   let testResults = "=== RÉSULTATS DES TESTS AUTOMATISÉS (EXÉCUTÉS PAR LE HARNAIS) ===\n\n";
 
-  if (state.needsBack) {
+  if (needsBack) {
     testResults += "## BACKEND\n";
     console.log("[TestRunner] Running Backend tests...");
     
@@ -38,7 +37,7 @@ export async function testRunnerNode(state: typeof GraphState.State) {
     }
   }
 
-  if (state.needsFront) {
+  if (needsFront) {
     testResults += "\n## FRONTEND\n";
     console.log("[TestRunner] Running Frontend tests...");
 
@@ -65,5 +64,11 @@ export async function testRunnerNode(state: typeof GraphState.State) {
     }
   }
 
+  return testResults;
+}
+
+export async function testRunnerNode(state: typeof GraphState.State) {
+  console.log("--- TEST RUNNER NODE ---");
+  const testResults = await executeTests(state.needsBack, state.needsFront);
   return { testResults };
 }
