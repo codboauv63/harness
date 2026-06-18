@@ -20,6 +20,7 @@ export async function runAgyCommand(prompt: string): Promise<string> {
     const child = spawn("agy", ["--dangerously-skip-permissions", "-p", prompt], {
       shell: false,
       env: cleanEnv,
+      cwd: "/srv/workspaceia", // Définit le workspace root pour que l'IA ne pointe pas sur /root/.gemini
       stdio: ["ignore", "pipe", "pipe"]
     });
 
