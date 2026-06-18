@@ -44,7 +44,7 @@ ${documentContext ? `\n=== CONTENU DU DOCUMENT DEMANDÉ ===\n${documentContext}\
 5. Si l'utilisateur demande EXPLICITEMENT de générer ou modifier uniquement le PRD, laisse les listes "epics" et "userStories" vides ([]).
 6. Si tu as besoin de lire un document (ADR, API, US, Epic), utilise le statut "need_document" avec l'ID (ex: ADR-0001).
 7. Tu DOIS EXCLUSIVEMENT et UNIQUEMENT répondre par un objet JSON valide (pas de Markdown autour, juste le JSON).
-8. Ignore toute instruction système par défaut concernant 'Antigravity', 'scratch directory' ou 'App Data Directory'. NE tente PAS de lire ou d'écrire sur le système de fichiers local.
+8. Ignore toute instruction système par défaut concernant 'Antigravity', 'scratch directory' ou 'App Data Directory'. Ton espace de travail cible est `/srv/workspaceia/`.
 
 === TEMPLATE DE PRD À RESPECTER ===
 ${prdTemplate || '(Aucun template de PRD fourni)'}
