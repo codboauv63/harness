@@ -85,6 +85,21 @@ app.post('/api/project/architecture', (req, res) => {
 
 import { runArchitectChatAgent } from './agents/architectAgent';
 import { getIssue, getMilestoneByTitle } from './giteaApi';
+import { getRegistry } from './utils/registry';
+
+app.get('/api/workflow/registry', (req, res) => {
+  try {
+    const registry = getRegistry();
+    // Add default documents
+    registry.items.unshift(
+      { id: 'PRD', type: 'document', title: 'Product Requirements Document (PRD)' },
+      { id: 'ARCHITECTURE', type: 'document', title: 'Architecture Globale' }
+    );
+    res.json(registry);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Agent Chat Routes
 const conversations = new Map<string, { role: string, content: string }[]>();
@@ -100,20 +115,26 @@ app.post('/api/workflow/agent/chat', async (req, res) => {
     
     let issueContext = "";
     if (issueNumber) {
-      try {
-        if (issueNumber.startsWith('EPIC-')) {
-          const epic = await getMilestoneByTitle(issueNumber);
-          if (epic) {
-            issueContext = `Epic: ${epic.title}\nDescription: ${epic.description}`;
+      if (issueNumber === 'PRD') {
+        issueContext = `Contexte: L'utilisateur se réfère au PRD.`;
+      } else if (issueNumber === 'ARCHITECTURE') {
+        issueContext = `Contexte: L'utilisateur se réfère à l'Architecture Globale.`;
+      } else {
+        try {
+          if (issueNumber.startsWith('EPIC-')) {
+            const epic = await getMilestoneByTitle(issueNumber);
+            if (epic) {
+              issueContext = `Epic: ${epic.title}\nDescription: ${epic.description}`;
+            }
+          } else {
+            const issue = await getIssue(issueNumber);
+            if (issue) {
+              issueContext = `Titre: ${issue.title}\nDescription: ${issue.body}\nEpic: ${issue.milestone?.title || 'Aucune'}`;
+            }
           }
-        } else {
-          const issue = await getIssue(issueNumber);
-          if (issue) {
-            issueContext = `Titre: ${issue.title}\nDescription: ${issue.body}\nEpic: ${issue.milestone?.title || 'Aucune'}`;
-          }
+        } catch (err) {
+          console.warn(`Impossible de récupérer la référence ${issueNumber} pour le contexte.`);
         }
-      } catch (err) {
-        console.warn(`Impossible de récupérer la référence ${issueNumber} pour le contexte.`);
       }
     }
 

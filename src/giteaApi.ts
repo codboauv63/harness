@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { registerItem } from './utils/registry';
 
 // Ignore SSL certificates (for self-signed local Gitea)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -201,6 +202,11 @@ export async function upsertIssue(title: string, body: string, labelIds: number[
       headers,
       body: JSON.stringify({ labels: labelIds })
     });
+    
+    if (title.startsWith('US-')) {
+      registerItem({ id: title.split('-')[0] + '-' + title.split('-')[1].split(' ')[0], type: 'us', title, issueId: existing.number });
+    }
+    
     return existing;
   } else {
     console.log(`[GITEA API] Creating new Issue - ${title}`);
@@ -209,7 +215,13 @@ export async function upsertIssue(title: string, body: string, labelIds: number[
       headers,
       body: JSON.stringify({ title, body, labels: labelIds, milestone: milestoneId })
     });
-    return await createRes.json();
+    const created = await createRes.json();
+    
+    if (title.startsWith('US-')) {
+      registerItem({ id: title.split('-')[0] + '-' + title.split('-')[1].split(' ')[0], type: 'us', title, issueId: created.number });
+    }
+    
+    return created;
   }
 }
 
@@ -227,6 +239,11 @@ export async function upsertMilestone(title: string, description: string) {
       headers,
       body: JSON.stringify({ description })
     });
+    
+    if (title.startsWith('EPIC-')) {
+      registerItem({ id: title.split('-')[0] + '-' + title.split('-')[1].split(' ')[0], type: 'epic', title, issueId: existing.id });
+    }
+    
     return existing;
   } else {
     console.log(`[GITEA API] Creating Milestone - ${title}`);
@@ -235,6 +252,12 @@ export async function upsertMilestone(title: string, description: string) {
       headers,
       body: JSON.stringify({ title, description, state: 'open' })
     });
-    return await createRes.json();
+    const created = await createRes.json();
+    
+    if (title.startsWith('EPIC-')) {
+      registerItem({ id: title.split('-')[0] + '-' + title.split('-')[1].split(' ')[0], type: 'epic', title, issueId: created.id });
+    }
+    
+    return created;
   }
 }
