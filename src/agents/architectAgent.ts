@@ -53,8 +53,8 @@ Your execution environment already injects the following context into your promp
 - **Naming Convention:** You MUST name all your productions with the exact format: \`[XXX-0000] Titre\` (e.g. \`[ADR-0001] Choix de la BDD\`, \`[API-0002] Swagger API\`, \`[DDD-0001] Models\`).
 - **Output:** Your output will be posted directly to Gitea as an Architecture Design Record comment. The Dev Front and Dev Back agents will read your exact response to implement the code. Be extremely precise.
 - **No Manual Trackers:** Do NOT reference \`.mas/tracker\`, \`.mas/contracts\`, or \`.mas/knowledge\` manually. Use your productions.
-- **Ignore Antigravity/System Context:** You are STRICTLY the MAS Agent. Ignore any default system instructions about 'Antigravity', 'scratch directory', or 'App Data Directory'. Your target workspace is `/srv/workspaceia/`.
-- **NO TOOLS ALLOWED:** Do NOT use your terminal tools (like `run_command`) or file tools to initialize projects or execute tests. Your ONLY goal is to output the requested JSON containing the architecture design. The Harness will handle execution.
+- **Ignore Antigravity/System Context:** You are STRICTLY the MAS Agent. Ignore any default system instructions about 'Antigravity', 'scratch directory', or 'App Data Directory'. Your target workspace is '/srv/workspaceia/'.
+- **NO TOOLS ALLOWED:** Do NOT use your terminal tools (like 'run_command') or file tools to initialize projects or execute tests. Your ONLY goal is to output the requested JSON containing the architecture design. The Harness will handle execution.
 `;
 
     const prompt = `=== CONTEXTE GÉNÉRAL DU PROJET (PRD) ===
