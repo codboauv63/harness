@@ -90,7 +90,7 @@ app.post('/api/project/architecture', (req, res) => {
 // Templates Routes
 app.get('/api/templates', (req, res) => {
   try {
-    const templatesDir = path.resolve(__dirname, '../../templates');
+    const templatesDir = path.join(process.cwd(), 'templates');
     if (!fs.existsSync(templatesDir)) {
       return res.json({ templates: [] });
     }
@@ -115,7 +115,7 @@ app.post('/api/templates/:name', (req, res) => {
       return res.status(400).json({ error: "Nom de fichier invalide" });
     }
     
-    const templatesDir = path.resolve(__dirname, '../../templates');
+    const templatesDir = path.join(process.cwd(), 'templates');
     if (!fs.existsSync(templatesDir)) {
       fs.mkdirSync(templatesDir, { recursive: true });
     }
