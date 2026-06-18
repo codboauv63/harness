@@ -18,6 +18,7 @@ services:
       - LANGCHAIN_TRACING_V2=false
     working_dir: /workspace/.harness
     command: sh -c "npm install && npm run serve"
+    restart: unless-stopped
 
   dashboard:
     image: node:20-bookworm
