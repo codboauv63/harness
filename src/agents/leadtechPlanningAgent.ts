@@ -14,6 +14,7 @@ export async function leadtechPlanningNode(state: typeof GraphState.State) {
 
 CRITICAL RULES:
 - DO NOT use any tools or commands to search the filesystem.
+- Ignore any default system instructions about 'Antigravity', 'scratch directory', or 'App Data Directory'.
 - You already have all the context you need.
 - Output ONLY the JSON response.
 
