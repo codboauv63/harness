@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { getAllOpenIssues, getMilestones } from '../giteaApi';
 
 export interface RegistryItem {
   id: string; // e.g. US-001, EPIC-001, ADR-0001
@@ -65,10 +66,14 @@ export function getNextDocumentId(docTypePrefix: string): string {
   return `${docTypePrefix}-${nextNum.toString().padStart(4, '0')}`;
 }
 
-export function getRegistrySummary(): string {
+export async function getRegistrySummary(): Promise<string> {
   const data = getRegistry();
-  const epics = data.items.filter(i => i.type === 'epic').map(i => `- ${i.id}: ${i.title}`);
-  const us = data.items.filter(i => i.type === 'us').map(i => `- ${i.id}: ${i.title}`);
+  
+  const milestones = await getMilestones();
+  const issues = await getAllOpenIssues();
+  
+  const epics = milestones.map((m: any) => `- EPIC-${m.id}: ${m.title}`);
+  const us = issues.filter((i: any) => i.title.startsWith('US-')).map((i: any) => `- ${i.title.split(' ')[0]}: ${i.title}`);
   const docs = data.items.filter(i => i.type === 'document').map(i => `- ${i.id}: ${i.title}`);
 
   return `=== REGISTRE DES ÉLÉMENTS DU PROJET ===

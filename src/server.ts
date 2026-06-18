@@ -84,18 +84,39 @@ app.post('/api/project/architecture', (req, res) => {
 });
 
 import { runArchitectChatAgent } from './agents/architectAgent';
-import { getIssue, getMilestoneByTitle } from './giteaApi';
+import { getIssue, getMilestoneByTitle, getAllOpenIssues, getMilestones } from './giteaApi';
 import { getRegistry } from './utils/registry';
 
-app.get('/api/workflow/registry', (req, res) => {
+app.get('/api/workflow/registry', async (req, res) => {
   try {
     const registry = getRegistry();
-    // Add default documents
-    registry.items.unshift(
+    const milestones = await getMilestones();
+    const issues = await getAllOpenIssues();
+    
+    // Filter out old epics/us from local registry to avoid duplicates
+    const documents = registry.items.filter(i => i.type === 'document');
+    
+    const liveEpics = milestones.map((m: any) => ({
+      id: `EPIC-${m.id}`,
+      type: 'epic',
+      title: m.title
+    }));
+    
+    const liveUS = issues.filter((i: any) => i.title.startsWith('US-')).map((i: any) => ({
+      id: i.title.split(' ')[0], // US-001
+      type: 'us',
+      title: i.title
+    }));
+
+    const items = [
       { id: 'PRD', type: 'document', title: 'Product Requirements Document (PRD)' },
-      { id: 'ARCHITECTURE', type: 'document', title: 'Architecture Globale' }
-    );
-    res.json(registry);
+      { id: 'ARCHITECTURE', type: 'document', title: 'Architecture Globale' },
+      ...documents,
+      ...liveEpics,
+      ...liveUS
+    ];
+    
+    res.json({ items });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
