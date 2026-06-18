@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import { spawn } from 'child_process';
 import { runPmAgent } from './agents/pmAgent';
-import { upsertMilestone, upsertIssue, ensureLabelsExist, getMilestones } from './giteaApi';
+import { runArchitectChatAgent } from './agents/architectAgent';
+import { upsertMilestone, upsertIssue, ensureLabelsExist, getMilestones, getIssue, getMilestoneByTitle, getAllOpenIssues } from './giteaApi';
 import { workflow } from './index';
+import { getRegistry } from './utils/registry';
 import { getProjectContext, saveProjectContext, getArchitectureContext, saveArchitectureContext } from './utils/context';
 
 const app = express();
@@ -83,9 +85,6 @@ app.post('/api/project/architecture', (req, res) => {
   }
 });
 
-import { runArchitectChatAgent } from './agents/architectAgent';
-import { getIssue, getMilestoneByTitle, getAllOpenIssues, getMilestones } from './giteaApi';
-import { getRegistry } from './utils/registry';
 
 app.get('/api/workflow/registry', async (req, res) => {
   try {
