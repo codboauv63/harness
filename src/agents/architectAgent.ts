@@ -241,9 +241,7 @@ Format JSON attendu :
     if (documentContext) contextSummary.push("Document demandé");
     
     console.log(`\n\x1b[36m========== 📩 PROMPT ENVOYÉ AU ARCHITECT CHAT (Loop ${loopCount}) ==========\x1b[0m`);
-    console.log(`\x1b[90m[Total length: ${prompt.length} chars]\x1b[0m`);
-    console.log(`\x1b[90m[Includes: ${contextSummary.join(", ")}]\x1b[0m`);
-    console.log(`\x1b[33mUSER REQUEST: ${lastUserMessage.substring(0, 200)}${lastUserMessage.length > 200 ? '...' : ''}\x1b[0m`);
+    console.log(`\x1b[90m${prompt}\x1b[0m`);
     console.log(`\x1b[36m========================================================\x1b[0m\n`);
 
     const result = await new Promise<any>((resolve, reject) => {

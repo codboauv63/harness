@@ -86,8 +86,8 @@ Format JSON attendu :
     prompt += `\nPM (toi):`;
 
     console.log(`\n\x1b[36m========== 📩 PROMPT ENVOYÉ AU PM AGENT (Loop ${loopCount}) ==========\x1b[0m`);
-    console.log(`\x1b[90m[Prompt length: ${prompt.length} chars]\x1b[0m`);
-    console.log(`\x1b[36m==================================================\x1b[0m\n`);
+    console.log(`\x1b[90m${prompt}\x1b[0m`);
+    console.log(`\x1b[36m========================================================\x1b[0m\n`);
 
     const result = await new Promise<any>((resolve, reject) => {
       const cleanEnv: any = {};
