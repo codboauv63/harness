@@ -28,6 +28,14 @@ export async function executeTests(needsBack: boolean, needsFront: boolean): Pro
       testResults += `⚠️ ERREUR npm install (Backend)\n\`\`\`text\n${installRes.stdout}\n${installRes.stderr}\n\`\`\`\n`;
     }
 
+    // TypeScript Check
+    let tscRes = await runSshCommand("10.9.0.10", "/home/appuser/.ssh/id_mcp_backend", "npx tsc --noEmit");
+    if (tscRes.error) {
+      testResults += `❌ ÉCHEC npx tsc --noEmit (Backend)\n\`\`\`text\n${tscRes.stdout}\n${tscRes.stderr}\n\`\`\`\n`;
+    } else {
+      testResults += `✅ SUCCÈS npx tsc --noEmit (Backend)\n\`\`\`text\n${tscRes.stdout}\n\`\`\`\n`;
+    }
+
     // Test
     let testRes = await runSshCommand("10.9.0.10", "/home/appuser/.ssh/id_mcp_backend", "npm test");
     if (testRes.error) {
@@ -45,6 +53,14 @@ export async function executeTests(needsBack: boolean, needsFront: boolean): Pro
     let installRes = await runSshCommand("10.9.0.20", "/home/appuser/.ssh/id_mcp_frontend", "npm install");
     if (installRes.error) {
       testResults += `⚠️ ERREUR npm install (Frontend)\n\`\`\`text\n${installRes.stdout}\n${installRes.stderr}\n\`\`\`\n`;
+    }
+
+    // TypeScript Check
+    let tscRes = await runSshCommand("10.9.0.20", "/home/appuser/.ssh/id_mcp_frontend", "npx tsc --noEmit");
+    if (tscRes.error) {
+      testResults += `❌ ÉCHEC npx tsc --noEmit (Frontend)\n\`\`\`text\n${tscRes.stdout}\n${tscRes.stderr}\n\`\`\`\n`;
+    } else {
+      testResults += `✅ SUCCÈS npx tsc --noEmit (Frontend)\n\`\`\`text\n${tscRes.stdout}\n\`\`\`\n`;
     }
 
     // Test
