@@ -1,4 +1,6 @@
 import { GraphState } from "../state";
+import * as fs from 'fs';
+import { broadcastEvent } from '../server';
 import { runAgyCommand } from "../utils/agy";
 import { updateIssueLabel, createIssueComment } from "../giteaApi";
 import { getProjectContext, getArchitectureContext } from "../utils/context";
@@ -296,6 +298,7 @@ Format JSON attendu :
 
     if (parsed.status === "need_document" && parsed.documentId) {
       console.log(`[ARCHITECT CHAT] Requesting document: ${parsed.documentId}`);
+      broadcastEvent('chat_status', { message: `Je récupère et analyse le document ${parsed.documentId}...` });
       const content = getDocumentContent(parsed.documentId);
       if (content) {
         documentContext = `Contenu de ${parsed.documentId}:\n\n${content}`;
@@ -310,6 +313,7 @@ Format JSON attendu :
       continue; // loop again
     } else if (parsed.status === "need_tests") {
       console.log(`[ARCHITECT CHAT] Execution des tests demandée...`);
+      broadcastEvent('chat_status', { message: `Je lance l'exécution des tests E2E pour valider l'existant. Cela peut prendre un certain temps...` });
       const results = await executeTests(true, true);
       messages.push({ role: "assistant", content: `(Je demande l'exécution des tests automatisés)` });
       messages.push({ role: "user", content: `Voici les résultats des tests:\n${results}` });

@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
+import { broadcastEvent } from '../server';
 import { getProjectContext } from "../utils/context";
 import { getRegistrySummary, getDocumentContent } from "../utils/registry";
 
@@ -140,6 +141,7 @@ Format JSON attendu :
 
     if (parsed.status === "need_document" && parsed.documentId) {
       console.log(`[PM CHAT] Requesting document: ${parsed.documentId}`);
+      broadcastEvent('chat_status', { message: `Je récupère et analyse le document ${parsed.documentId}...` });
       const content = getDocumentContent(parsed.documentId);
       if (content) {
         documentContext = `Contenu de ${parsed.documentId}:\n\n${content}`;

@@ -36,9 +36,13 @@ app.get('/api/workflow/events', (req, res) => {
 });
 
 app.post('/api/workflow/webhook/update', (req, res) => {
-  clients.forEach(client => client.write(`data: refresh\n\n`));
+  broadcastEvent('refresh', {});
   res.json({ success: true });
 });
+
+export function broadcastEvent(event: string, data: any) {
+  clients.forEach(client => client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+}
 
 app.get('/api/workflow/graph', (req, res) => {
   try {
