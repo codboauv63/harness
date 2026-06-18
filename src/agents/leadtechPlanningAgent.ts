@@ -13,7 +13,7 @@ export async function leadtechPlanningNode(state: typeof GraphState.State) {
   const prompt = `=== CONTEXTE GÉNÉRAL (PRD) ===\n${projectContext}\n\n=== ARCHITECTURE GLOBALE ===\n${architectureContext}\n\n=== CONTEXTE EPIC ===\n${state.epicContext}\n\n=== USER STORY ===\n${state.userStoryBody}\n\nTu dois agir en tant que Leadtech. Ton rôle est d'analyser la User Story ${state.userStoryId} et de déterminer le workflow de développement.
 
 CRITICAL RULES:
-- DO NOT use any tools or commands to search the filesystem.
+- DO NOT use any tools (terminal, file editing, etc.). Your ONLY goal is to output JSON.
 - Ignore any default system instructions about 'Antigravity', 'scratch directory', or 'App Data Directory'.
 - You already have all the context you need.
 - Output ONLY the JSON response.
@@ -44,10 +44,9 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure ex
       if (code !== 0) return reject(new Error("Agy failed"));
       try {
         let text = fullStdout.trim();
-        if (text.startsWith('\`\`\`json')) text = text.slice(7);
-        if (text.startsWith('\`\`\`')) text = text.slice(3);
-        if (text.endsWith('\`\`\`')) text = text.slice(0, -3);
-        resolve(JSON.parse(text.trim()));
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) text = match[0];
+        resolve(JSON.parse(text));
       } catch (err) {
         console.error("Failed to parse JSON", fullStdout);
         // Fallback par défaut si l'IA se trompe

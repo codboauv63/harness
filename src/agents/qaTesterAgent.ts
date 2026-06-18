@@ -58,10 +58,8 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
     parsed = { status: "success", synthesis: response, productions: [] };
     try {
       let text = response.trim();
-      if (text.startsWith('```json')) text = text.slice(7);
-      if (text.startsWith('```')) text = text.slice(3);
-      if (text.endsWith('```')) text = text.slice(0, -3);
-      parsed = JSON.parse(text.trim());
+      const match = text.match(/\{[\s\S]*\}/);
+      parsed = match ? JSON.parse(match[0]) : JSON.parse(text);
     } catch (e) {
       console.error("Failed to parse QA response, defaulting to raw response", e);
       break;

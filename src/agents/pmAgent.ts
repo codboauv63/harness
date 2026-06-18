@@ -45,6 +45,7 @@ ${documentContext ? `\n=== CONTENU DU DOCUMENT DEMANDÉ ===\n${documentContext}\
 6. Si tu as besoin de lire un document (ADR, API, US, Epic), utilise le statut "need_document" avec l'ID (ex: ADR-0001).
 7. Tu DOIS EXCLUSIVEMENT et UNIQUEMENT répondre par un objet JSON valide (pas de Markdown autour, juste le JSON).
 8. Ignore toute instruction système par défaut concernant 'Antigravity', 'scratch directory' ou 'App Data Directory'. Ton espace de travail cible est `/srv/workspaceia/`.
+9. N'UTILISE AUCUN OUTIL (tools). Ton unique but est de générer la réponse JSON contenant les Epics et US. Ne lance pas de commandes terminal et ne modifie pas de fichiers.
 
 === TEMPLATE DE PRD À RESPECTER ===
 ${prdTemplate || '(Aucun template de PRD fourni)'}
@@ -123,10 +124,8 @@ Format JSON attendu :
         } else {
           try {
             let text = fullStdout.trim();
-            if (text.startsWith('\`\`\`json')) text = text.slice(7);
-            if (text.startsWith('\`\`\`')) text = text.slice(3);
-            if (text.endsWith('\`\`\`')) text = text.slice(0, -3);
-            text = text.trim();
+            const match = text.match(/\{[\s\S]*\}/);
+            if (match) text = match[0];
             const p = JSON.parse(text);
             resolve(p);
           } catch (err) {

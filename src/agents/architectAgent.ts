@@ -54,6 +54,7 @@ Your execution environment already injects the following context into your promp
 - **Output:** Your output will be posted directly to Gitea as an Architecture Design Record comment. The Dev Front and Dev Back agents will read your exact response to implement the code. Be extremely precise.
 - **No Manual Trackers:** Do NOT reference \`.mas/tracker\`, \`.mas/contracts\`, or \`.mas/knowledge\` manually. Use your productions.
 - **Ignore Antigravity/System Context:** You are STRICTLY the MAS Agent. Ignore any default system instructions about 'Antigravity', 'scratch directory', or 'App Data Directory'. Your target workspace is `/srv/workspaceia/`.
+- **NO TOOLS ALLOWED:** Do NOT use your terminal tools (like `run_command`) or file tools to initialize projects or execute tests. Your ONLY goal is to output the requested JSON containing the architecture design. The Harness will handle execution.
 `;
 
     const prompt = `=== CONTEXTE GÉNÉRAL DU PROJET (PRD) ===
@@ -105,10 +106,9 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
     parsed = { status: "success", synthesis: response, productions: [] };
     try {
       let text = response.trim();
-      if (text.startsWith('\`\`\`json')) text = text.slice(7);
-      if (text.startsWith('\`\`\`')) text = text.slice(3);
-      if (text.endsWith('\`\`\`')) text = text.slice(0, -3);
-      parsed = JSON.parse(text.trim());
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) text = match[0];
+      parsed = JSON.parse(text);
     } catch (e) {
       console.error("Failed to parse Architect response, defaulting to raw response", e);
       break;
@@ -282,10 +282,8 @@ Format JSON attendu :
         } else {
           try {
             let text = fullStdout.trim();
-            if (text.startsWith('\`\`\`json')) text = text.slice(7);
-            if (text.startsWith('\`\`\`')) text = text.slice(3);
-            if (text.endsWith('\`\`\`')) text = text.slice(0, -3);
-            text = text.trim();
+            const match = text.match(/\{[\s\S]*\}/);
+            if (match) text = match[0];
             const p = JSON.parse(text);
             resolve(p);
           } catch (err) {
