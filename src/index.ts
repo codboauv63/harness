@@ -4,6 +4,7 @@ import { leadtechPlanningNode } from "./agents/leadtechPlanningAgent";
 import { architectNode } from "./agents/architectAgent";
 import { devFrontNode } from "./agents/devFrontAgent";
 import { devBackNode } from "./agents/devBackAgent";
+import { testRunnerNode } from "./agents/testRunnerNode";
 import { qaNode } from "./agents/qaTesterAgent";
 import { leadtechNode } from "./agents/leadtechAgent";
 import { getAllOpenIssues, getIssueComments } from "./giteaApi";
@@ -26,7 +27,7 @@ function routeFromArchitect(state: typeof GraphState.State) {
 
 function routeFromFront(state: typeof GraphState.State) {
   if (state.needsBack) return "devBack";
-  return "qa";
+  return "testRunner";
 }
 
 function routeLeadtechDecision(state: typeof GraphState.State) {
@@ -40,6 +41,7 @@ export const workflow = new StateGraph(GraphState)
   .addNode("architect", architectNode)
   .addNode("devFront", devFrontNode)
   .addNode("devBack", devBackNode)
+  .addNode("testRunner", testRunnerNode)
   .addNode("qa", qaNode)
   .addNode("leadtech", leadtechNode)
 
@@ -62,9 +64,10 @@ export const workflow = new StateGraph(GraphState)
   })
   .addConditionalEdges("devFront", routeFromFront, {
     "devBack": "devBack",
-    "qa": "qa"
+    "testRunner": "testRunner"
   })
-  .addEdge("devBack", "qa")
+  .addEdge("devBack", "testRunner")
+  .addEdge("testRunner", "qa")
   .addEdge("qa", "leadtech")
   
   // Final Review

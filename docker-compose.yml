@@ -14,11 +14,16 @@ services:
       - /home/david/.local/bin/agy:/usr/local/bin/agy:ro
       - /home/david/.gemini:/root/.gemini
       - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/secured-ia-agent/config/mcp_keys/id_mcp_backend:/home/appuser/.ssh/id_mcp_backend:ro
+      - /srv/secured-ia-agent/config/mcp_keys/id_mcp_frontend:/home/appuser/.ssh/id_mcp_frontend:ro
     environment:
       - LANGCHAIN_TRACING_V2=false
     working_dir: /workspace/.harness
     command: sh -c "npm install && npm run serve"
     restart: unless-stopped
+    networks:
+      - default
+      - ia_bridge_net
 
   dashboard:
     image: node:20-bookworm
@@ -39,4 +44,6 @@ services:
 networks:
   default:
   nginx-proxy:
+    external: true
+  ia_bridge_net:
     external: true

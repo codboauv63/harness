@@ -1,8 +1,11 @@
 # User Story: [US-XXX] - [Titre de la US]
 
 ## 1. Description
+
 **En tant que** [Rôle / Persona]
+
 **Je veux** [Action / Fonctionnalité]
+
 **Afin de** [Valeur métier / Objectif]
 
 ## 2. Contexte Métier

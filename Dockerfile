@@ -1,6 +1,6 @@
 FROM node:20-bookworm
 
-RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y gosu openssh-client && rm -rf /var/lib/apt/lists/*
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000

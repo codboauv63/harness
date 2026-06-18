@@ -16,5 +16,6 @@ export const GraphState = Annotation.Root({
   qaFeedback: Annotation<string[]>({ reducer: (x, y) => x.concat(y), default: () => [] }),
   leadtechFeedback: Annotation<string[]>({ reducer: (x, y) => x.concat(y), default: () => [] }),
   humanFeedback: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => "" }),
+  testResults: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => "" }),
   messages: Annotation<any[]>({ reducer: (x, y) => x.concat(y), default: () => [] }),
 });

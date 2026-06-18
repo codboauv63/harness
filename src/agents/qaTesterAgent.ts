@@ -24,6 +24,9 @@ Architecte : ${state.messages.filter((m: any) => m.role === "architect").map((m:
 Dev Front : ${state.messages.filter((m: any) => m.role === "dev-front").map((m: any) => m.content).join("\n")}
 Dev Back : ${state.messages.filter((m: any) => m.role === "dev-back").map((m: any) => m.content).join("\n")}
 
+=== RÉSULTATS DES TESTS AUTOMATISÉS (EXÉCUTÉS PAR LE HARNAIS) ===
+${state.testResults}
+
 Règles critiques :
 1. Écris des tests de bout en bout (e2e).
 2. Si un test échoue, remonte l'erreur dans ta synthèse et positionne le status à "failed".

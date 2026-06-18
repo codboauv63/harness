@@ -23,6 +23,9 @@ Tâche : Faire une revue de code pour la User Story ${state.userStoryId}.
 Voici les logs des étapes précédentes :
 ${state.messages.map((m: any) => `${m.role} : ${m.content}`).join("\n\n")}
 
+=== RÉSULTATS DES TESTS AUTOMATISÉS (EXÉCUTÉS PAR LE HARNAIS) ===
+${state.testResults}
+
 Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure exacte, sans markdown autour :
 {
   "status": "approved" | "rejected",

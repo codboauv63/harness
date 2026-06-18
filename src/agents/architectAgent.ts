@@ -71,6 +71,9 @@ Prochain ID API disponible : ${nextApiId}
 Prochain ID DDD disponible : ${nextDddId}
 ${documentContext ? `\n=== CONTENU DU DOCUMENT DEMANDÉ ===\n${documentContext}\n` : ''}
 
+=== DERNIERS RÉSULTATS DES TESTS ===
+${state.testResults}
+
 === INSTRUCTIONS DE L'AGENT ===
 ${skillInstructions}
 
@@ -134,6 +137,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
   }
 
   // Create a separate Gitea comment for each production and register them
+  
   let productionsMd = "";
   if (parsed.productions && Array.isArray(parsed.productions)) {
     for (const p of parsed.productions) {

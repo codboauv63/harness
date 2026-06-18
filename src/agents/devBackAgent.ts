@@ -26,6 +26,9 @@ ${state.humanFeedback}
 Historique des agents précédents (TRÈS IMPORTANT pour lire les directives de l'Architecte) :
 ${state.messages.map((m: any) => `${m.role} : ${m.content}`).join("\n\n")}
 
+=== DERNIERS RÉSULTATS DES TESTS ===
+${state.testResults}
+
 Règles critiques :
 1. Crée les routes et les contrôleurs en suivant Clean Architecture.
 2. Écris des tests unitaires minimaux si demandé.
