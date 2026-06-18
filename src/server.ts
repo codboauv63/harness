@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { spawn } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 import { runPmAgent } from './agents/pmAgent';
 import { runArchitectChatAgent } from './agents/architectAgent';
 import { upsertMilestone, upsertIssue, ensureLabelsExist, getMilestones, getIssue, getMilestoneByTitle, getAllOpenIssues } from './giteaApi';
@@ -79,6 +81,46 @@ app.post('/api/project/architecture', (req, res) => {
   try {
     const { architecture } = req.body;
     saveArchitectureContext(architecture || "");
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Templates Routes
+app.get('/api/templates', (req, res) => {
+  try {
+    const templatesDir = path.resolve(__dirname, '../../templates');
+    if (!fs.existsSync(templatesDir)) {
+      return res.json({ templates: [] });
+    }
+    const files = fs.readdirSync(templatesDir).filter(f => f.endsWith('.md'));
+    const templates = files.map(file => {
+      const content = fs.readFileSync(path.join(templatesDir, file), 'utf-8');
+      return { name: file, content };
+    });
+    res.json({ templates });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/templates/:name', (req, res) => {
+  try {
+    const { name } = req.params;
+    const { content } = req.body;
+    
+    // Basic security to avoid path traversal
+    if (!name.endsWith('.md') || name.includes('/') || name.includes('..')) {
+      return res.status(400).json({ error: "Nom de fichier invalide" });
+    }
+    
+    const templatesDir = path.resolve(__dirname, '../../templates');
+    if (!fs.existsSync(templatesDir)) {
+      fs.mkdirSync(templatesDir, { recursive: true });
+    }
+    
+    fs.writeFileSync(path.join(templatesDir, name), content, 'utf-8');
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
