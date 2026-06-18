@@ -93,6 +93,37 @@ export async function getIssueComments(issueNumber: number) {
   }
 }
 
+export async function getIssue(issueIdOrNumber: string | number) {
+  if (!GITEA_TOKEN) return null;
+  try {
+    // If it's US-XXX, we might need to search for it, or we assume issueIdOrNumber is the exact ID/Number
+    if (typeof issueIdOrNumber === 'string' && issueIdOrNumber.startsWith('US-')) {
+      const searchRes = await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/issues?state=all&q=${encodeURIComponent(issueIdOrNumber)}`, { headers });
+      const issues = await searchRes.json();
+      return issues.find((i: any) => i.title.includes(issueIdOrNumber)) || null;
+    }
+    const res = await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/issues/${issueIdOrNumber}`, { headers });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (error: any) {
+    console.error("[GITEA API Error] getIssue:", error.message);
+    return null;
+  }
+}
+
+export async function getMilestoneByTitle(title: string) {
+  if (!GITEA_TOKEN) return null;
+  try {
+    const res = await fetch(`${GITEA_URL}/repos/${GITEA_OWNER}/${GITEA_REPO}/milestones?state=all`, { headers });
+    const milestones = await res.json();
+    return milestones.find((m: any) => m.title.includes(title)) || null;
+  } catch (error: any) {
+    console.error("[GITEA API Error] getMilestoneByTitle:", error.message);
+    return null;
+  }
+}
+
+
 export async function getAllOpenIssues() {
   if (!GITEA_TOKEN) return [];
   try {

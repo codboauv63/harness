@@ -71,3 +71,96 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
   const historyContent = `Status: ${parsed.status}\nSynthesis: ${parsed.synthesis}\nProductions:\n${productionsMd}`;
   return { messages: [{ role: "architect", content: historyContent }] };
 }
+
+export async function runArchitectChatAgent(messages: {role: string, content: string}[], issueContext?: string): Promise<any> {
+  const projectContext = getProjectContext();
+  const architectureContext = getArchitectureContext();
+
+  let prompt = `Tu dois agir en tant que Software Architect (Architecte Logiciel). 
+Ton rôle est de répondre aux questions techniques de l'utilisateur, de faire des choix d'architecture (ADR) ou de concevoir des contrats d'API.
+
+=== CONTEXTE GLOBAL (PRD) ===
+${projectContext}
+
+=== ARCHITECTURE GLOBALE ACTUELLE ===
+${architectureContext}
+
+`;
+
+  if (issueContext) {
+    prompt += `=== CONTEXTE SPÉCIFIQUE (Ticket / Epic) ===\n${issueContext}\n\n`;
+  }
+
+  prompt += `=== RÈGLES STRICTES ===
+1. Analyse la demande de l'utilisateur. Si nécessaire, propose une mise à jour de l'Architecture Globale.
+2. Tu DOIS EXCLUSIVEMENT et UNIQUEMENT répondre par un objet JSON valide (pas de Markdown autour, juste le JSON).
+
+Format JSON attendu :
+{
+  "status": "need_details" ou "ready",
+  "reply": "Ton message textuel pour l'utilisateur (explication, questions, etc.)",
+  "architectureUpdate": "OPTIONNEL. Le document d'Architecture Globale mis à jour au format Markdown (si la discussion amène à une modification structurelle). Laisse vide si non nécessaire."
+}
+
+=== HISTORIQUE DE LA CONVERSATION ===
+`;
+
+  messages.forEach(m => {
+    prompt += `${m.role.toUpperCase()}: ${m.content}\n`;
+  });
+  prompt += `\nARCHITECT (toi):`;
+
+  console.log(`\n\x1b[36m========== 📩 PROMPT ENVOYÉ AU ARCHITECT CHAT ==========\x1b[0m`);
+  console.log(`\x1b[90m${prompt}\x1b[0m`);
+  console.log(`\x1b[36m========================================================\x1b[0m\n`);
+
+  return new Promise((resolve, reject) => {
+    const { spawn } = require('child_process');
+    const cleanEnv: any = {};
+    for (const key in process.env) {
+      if (!key.startsWith("npm_") && key !== "INIT_CWD" && key !== "PWD") {
+        cleanEnv[key] = process.env[key];
+      }
+    }
+
+    const child = spawn("agy", ["--dangerously-skip-permissions", "-p", prompt], {
+      shell: false,
+      env: cleanEnv,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    let fullStdout = "";
+
+    console.log(`\n\x1b[32m========== 🤖 RÉPONSE DE L'AGENT ARCHITECT EN DIRECT ==========\x1b[0m`);
+
+    child.stdout.on("data", (data: any) => {
+      const text = data.toString();
+      fullStdout += text;
+      process.stdout.write(`\x1b[37m${text}\x1b[0m`);
+    });
+
+    child.stderr.on("data", (data: any) => {
+      console.error("[ARCHITECT CHAT STDERR]:", data.toString());
+    });
+
+    child.on("close", (code: number) => {
+      console.log(`\n\x1b[32m===============================================================\x1b[0m\n`);
+      if (code !== 0) {
+        reject(new Error(`Agent failed with code ${code}`));
+      } else {
+        try {
+          let text = fullStdout.trim();
+          if (text.startsWith('\`\`\`json')) text = text.slice(7);
+          if (text.startsWith('\`\`\`')) text = text.slice(3);
+          if (text.endsWith('\`\`\`')) text = text.slice(0, -3);
+          text = text.trim();
+          const parsed = JSON.parse(text);
+          resolve(parsed);
+        } catch (err) {
+          console.error("Failed to parse Architect JSON:", fullStdout);
+          reject(new Error("L'agent n'a pas retourné un JSON valide."));
+        }
+      }
+    });
+  });
+}

@@ -83,22 +83,48 @@ app.post('/api/project/architecture', (req, res) => {
   }
 });
 
-// PM Agent Routes
+import { runArchitectChatAgent } from './agents/architectAgent';
+import { getIssue, getMilestoneByTitle } from './giteaApi';
+
+// Agent Chat Routes
 const conversations = new Map<string, { role: string, content: string }[]>();
 
-app.post('/api/workflow/pm/idea', async (req, res) => {
+app.post('/api/workflow/agent/chat', async (req, res) => {
   try {
-    const { conversationId, message } = req.body;
+    const { agent, conversationId, message, issueNumber } = req.body;
     if (!conversations.has(conversationId)) {
       conversations.set(conversationId, []);
     }
     const history = conversations.get(conversationId)!;
     history.push({ role: "user", content: message });
     
-    const agentResponse = await runPmAgent(history);
-    
-    // Store agent reply
-    history.push({ role: "assistant", content: agentResponse.reply || "Voici le plan proposé :" });
+    let issueContext = "";
+    if (issueNumber) {
+      try {
+        if (issueNumber.startsWith('EPIC-')) {
+          const epic = await getMilestoneByTitle(issueNumber);
+          if (epic) {
+            issueContext = `Epic: ${epic.title}\nDescription: ${epic.description}`;
+          }
+        } else {
+          const issue = await getIssue(issueNumber);
+          if (issue) {
+            issueContext = `Titre: ${issue.title}\nDescription: ${issue.body}\nEpic: ${issue.milestone?.title || 'Aucune'}`;
+          }
+        }
+      } catch (err) {
+        console.warn(`Impossible de récupérer la référence ${issueNumber} pour le contexte.`);
+      }
+    }
+
+    let agentResponse;
+    if (agent === 'architect') {
+      agentResponse = await runArchitectChatAgent(history, issueContext);
+      history.push({ role: "assistant", content: agentResponse.reply || "Voici l'architecture proposée :" });
+    } else {
+      agentResponse = await runPmAgent(history);
+      history.push({ role: "assistant", content: agentResponse.reply || "Voici le plan proposé :" });
+    }
     
     res.json(agentResponse);
   } catch (err: any) {
