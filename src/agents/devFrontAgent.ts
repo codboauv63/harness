@@ -57,7 +57,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
   response = await runAgyCommand(prompt);
   console.log("AFTER AGY", Date.now());
 
-  let parsed: any = { status: "success", synthesis: response, productions: [] };
+    parsed = { status: "success", synthesis: response, productions: [] };
   try {
     let text = response.trim();
     const match = text.match(/\{[\s\S]*\}/);
@@ -79,7 +79,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
   // Capture modified files
   let modifiedFiles = "";
   try {
-    const diff = execSync("git diff --name-only HEAD").toString().trim();
+    const diff = execSync("git diff --name-only HEAD", { cwd: "/workspace" }).toString().trim();
     if (diff) {
       modifiedFiles = "\n\n**[FILES] Fichiers impactés/créés :**\n" + diff.split("\n").map(f => `- ${f}`).join("\n");
     }
@@ -97,8 +97,10 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
   }
 
   // 3. Poster le log sur Gitea
-  const comment = `[DEV-FRONT] Synthèse d'Implémentation\n\n**Statut** : ${parsed.status.toUpperCase()}\n\n**Synthèse** : ${parsed.synthesis}\n${modifiedFiles}\n\n<details><summary>[LOG] Prompt Log</summary>\n\n\`\`\`text\n${prompt}\n\`\`\`\n</details>`;
+  const comment = `[DEV-FRONT] Synthèse d'Implémentation\n\n**Statut** : ${parsed.status.toUpperCase()}\n\n**Synthèse** : ${parsed.synthesis}\n${modifiedFiles}`;
+  const logBody = `[LOG] Prompt pour Dev Front\n\n\`\`\`text\n${prompt}\n\`\`\``;
   await createIssueComment(state.issueNumber, comment);
+  await createIssueComment(state.issueNumber, logBody);
 
   const historyContent = `Status: ${parsed.status}\nSynthesis: ${parsed.synthesis}\nProductions:\n${productionsMd}`;
   return { frontStatus: "dev_done", messages: [{ role: "dev-front", content: historyContent }] };

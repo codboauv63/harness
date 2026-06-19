@@ -137,7 +137,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
   // Capture modified files
   let modifiedFiles = "";
   try {
-    const diff = execSync("git diff --name-only HEAD").toString().trim();
+    const diff = execSync("git diff --name-only HEAD", { cwd: "/workspace" }).toString().trim();
     if (diff) {
       modifiedFiles = "\n\n**[FILES] Fichiers impactés/créés :**\n" + diff.split("\n").map(f => `- ${f}`).join("\n");
     }
@@ -246,6 +246,8 @@ Format JSON attendu :
     console.log(`\x1b[90m${prompt}\x1b[0m`);
     console.log(`\x1b[36m========================================================\x1b[0m\n`);
 
+    broadcastEvent('chat_status', { message: loopCount === 1 ? 'Analyse de votre demande en cours...' : 'Je finalise mon analyse avec les nouveaux éléments...' });
+
     const result = await new Promise<any>((resolve, reject) => {
       const { spawn } = require('child_process');
       const cleanEnv: any = {};
@@ -288,13 +290,21 @@ Format JSON attendu :
             resolve(p);
           } catch (err) {
             console.error("Failed to parse Architect JSON:", fullStdout);
-            reject(new Error("L'agent n'a pas retourné un JSON valide."));
+            resolve({ _parseError: true, rawOutput: fullStdout });
           }
         }
       });
     });
 
     parsed = result;
+
+    if (parsed._parseError) {
+      console.log(`[ARCHITECT CHAT] Invalid JSON received, asking to reformat...`);
+      broadcastEvent('chat_status', { message: `Erreur de format détectée. Je reformule ma réponse...` });
+      messages.push({ role: "assistant", content: parsed.rawOutput });
+      messages.push({ role: "user", content: "Erreur Système : Ta réponse n'est pas un JSON valide. S'il te plaît, reformule ta réponse en t'assurant qu'elle soit EXCLUSIVEMENT un objet JSON valide, sans bloc de code markdown (` ```json `), et avec les retours à la ligne correctement échappés dans les chaînes de caractères." });
+      continue;
+    }
 
     if (parsed.status === "need_document" && parsed.documentId) {
       console.log(`[ARCHITECT CHAT] Requesting document: ${parsed.documentId}`);

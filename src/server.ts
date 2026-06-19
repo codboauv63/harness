@@ -14,13 +14,55 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- LOGGING MECANISM ---
+const LOG_FILE = path.join(process.cwd(), 'harness.log');
+// Empty the file on startup to avoid infinite growth
+fs.writeFileSync(LOG_FILE, '');
+
+export function broadcastEvent(event: string, data: any) {
+  clients.forEach(client => client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+}
+
+const origLog = console.log;
+console.log = function(...args: any[]) {
+  origLog.apply(console, args);
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+  fs.appendFileSync(LOG_FILE, msg + '\n');
+  broadcastEvent('log', { message: msg + '\n' });
+};
+
+const origError = console.error;
+console.error = function(...args: any[]) {
+  origError.apply(console, args);
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+  fs.appendFileSync(LOG_FILE, '[ERROR] ' + msg + '\n');
+  broadcastEvent('log', { message: '[ERROR] ' + msg + '\n' });
+};
+// ------------------------
+
 app.post('/api/workflow/start', (req, res) => {
   console.log("Démarrage du workflow LangGraph en tâche de fond...");
   const child = spawn('npx', ['ts-node', 'src/index.ts'], {
     cwd: process.cwd(),
     detached: true,
-    stdio: 'inherit'
+    stdio: 'pipe'
   });
+  
+  if (child.stdout) {
+    child.stdout.on('data', (data) => {
+      process.stdout.write(data);
+      fs.appendFileSync(LOG_FILE, data.toString());
+      broadcastEvent('log', { message: data.toString() });
+    });
+  }
+  if (child.stderr) {
+    child.stderr.on('data', (data) => {
+      process.stderr.write(data);
+      fs.appendFileSync(LOG_FILE, data.toString());
+      broadcastEvent('log', { message: data.toString() });
+    });
+  }
+  
   child.unref();
   res.json({ success: true, message: "Workflow démarré en tâche de fond." });
 });
@@ -40,9 +82,24 @@ app.post('/api/workflow/webhook/update', (req, res) => {
   res.json({ success: true });
 });
 
-export function broadcastEvent(event: string, data: any) {
-  clients.forEach(client => client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-}
+app.get('/api/workflow/logs', (req, res) => {
+  try {
+    const logs = fs.existsSync(LOG_FILE) ? fs.readFileSync(LOG_FILE, 'utf-8') : "";
+    res.json({ logs });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/workflow/logs', (req, res) => {
+  try {
+    fs.writeFileSync(LOG_FILE, '');
+    broadcastEvent('log_cleared', {});
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/api/workflow/graph', (req, res) => {
   try {
@@ -275,6 +332,7 @@ app.post('/api/workflow/pm/approve', async (req, res) => {
 });
 
 const PORT = 3002;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur Harness démarré sur le port ${PORT}`);
 });
+server.setTimeout(0);

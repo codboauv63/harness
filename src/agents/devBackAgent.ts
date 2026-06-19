@@ -78,7 +78,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
 
   let modifiedFiles = "";
   try {
-    const diff = execSync("git diff --name-only HEAD").toString().trim();
+    const diff = execSync("git diff --name-only HEAD", { cwd: "/workspace" }).toString().trim();
     if (diff) {
       modifiedFiles = "\n\n**[FILES] Fichiers impactés/créés :**\n" + diff.split("\n").map(f => `- ${f}`).join("\n");
     }
@@ -96,8 +96,10 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
   }
 
   // 3. Poster le log sur Gitea
-  const comment = `[DEV-BACK] Synthèse d'Implémentation\n\n**Statut** : ${parsed.status.toUpperCase()}\n\n**Synthèse** : ${parsed.synthesis}\n${modifiedFiles}\n\n<details><summary>[LOG] Prompt Log</summary>\n\n\`\`\`text\n${response}\n\`\`\`\n</details>`;
+  const comment = `[DEV-BACK] Synthèse d'Implémentation\n\n**Statut** : ${parsed.status.toUpperCase()}\n\n**Synthèse** : ${parsed.synthesis}\n${modifiedFiles}`;
+  const logBody = `[LOG] Prompt pour Dev Back\n\n\`\`\`text\n${prompt}\n\`\`\``;
   await createIssueComment(state.issueNumber, comment);
+  await createIssueComment(state.issueNumber, logBody);
 
   const historyContent = `Status: ${parsed.status}\nSynthesis: ${parsed.synthesis}\nProductions:\n${productionsMd}`;
   return { backStatus: "dev_done", messages: [{ role: "dev-back", content: historyContent }] };

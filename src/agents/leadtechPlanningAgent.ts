@@ -61,8 +61,9 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure ex
 - **Frontend requis** : ${parsed.needsFront ? 'Oui' : 'Non'}
 - **Backend requis** : ${parsed.needsBack ? 'Oui' : 'Non'}`;
 
-  const logBody = `\n<details><summary>Prompt Log</summary>\n\n\`\`\`text\n${prompt}\n\`\`\`\n</details>`;
-  await createIssueComment(state.issueNumber, comment + logBody);
+  const logBody = `[LOG] Prompt pour Leadtech Planning\n\n\`\`\`text\n${prompt}\n\`\`\``;
+  await createIssueComment(state.issueNumber, comment);
+  await createIssueComment(state.issueNumber, logBody);
 
   return {
     needsArchitect: parsed.needsArchitect,

@@ -76,7 +76,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
 
   let modifiedFiles = "";
   try {
-    const diff = execSync("git diff --name-only HEAD").toString().trim();
+    const diff = execSync("git diff --name-only HEAD", { cwd: "/workspace" }).toString().trim();
     if (diff) {
       modifiedFiles = "\n\n**[FILES] Fichiers d'E2E impactés/créés :**\n" + diff.split("\n").map(f => `- ${f}`).join("\n");
     }
@@ -93,8 +93,10 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
     }
   }
 
-  const comment = `[QA-TESTER] Synthèse d'Exécution E2E\n\n**Statut** : ${parsed.status.toUpperCase()}\n\n**Synthèse** : ${parsed.synthesis}\n${modifiedFiles}\n\n<details><summary>[LOG] Prompt Log</summary>\n\n\`\`\`text\n${prompt}\n\`\`\`\n</details>`;
+  const comment = `[QA-TESTER] Synthèse d'Exécution E2E\n\n**Statut** : ${parsed.status.toUpperCase()}\n\n**Synthèse** : ${parsed.synthesis}\n${modifiedFiles}`;
+  const logBody = `[LOG] Prompt pour QA Tester\n\n\`\`\`text\n${prompt}\n\`\`\``;
   await createIssueComment(state.issueNumber, comment);
+  await createIssueComment(state.issueNumber, logBody);
 
   const historyContent = `Status: ${parsed.status}\nSynthesis: ${parsed.synthesis}\nProductions:\n${productionsMd}`;
   return { qaStatus: parsed.status === "failed" ? "failed" : "tested", messages: [{ role: "qa", content: historyContent }] };

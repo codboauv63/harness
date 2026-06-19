@@ -47,7 +47,7 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure ex
 
   let modifiedFiles = "";
   try {
-    const diff = execSync("git diff --name-only HEAD").toString().trim();
+    const diff = execSync("git diff --name-only HEAD", { cwd: "/workspace" }).toString().trim();
     if (diff) {
       modifiedFiles = "\n\n**[FILES] Fichiers refactorisés :**\n" + diff.split("\n").map(f => `- ${f}`).join("\n");
     }
@@ -55,8 +55,10 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure ex
     // Ignore
   }
 
-  const comment = `[LEADTECH] Revue de Code & Décision Finale\n\n**Décision** : ${parsed.status.toUpperCase()}\n\n**Feedback** :\n${parsed.feedback}${modifiedFiles}\n\n<details><summary>[LOG] Prompt Log</summary>\n\n\`\`\`text\n${prompt}\n\`\`\`\n</details>`;
+  const comment = `[LEADTECH] Revue de Code & Décision Finale\n\n**Décision** : ${parsed.status.toUpperCase()}\n\n**Feedback** :\n${parsed.feedback}${modifiedFiles}`;
+  const logBody = `[LOG] Prompt pour Leadtech\n\n\`\`\`text\n${prompt}\n\`\`\``;
   await createIssueComment(state.issueNumber, comment);
+  await createIssueComment(state.issueNumber, logBody);
 
   if (parsed.status === "approved") {
     // Déplacer la carte sur "Done" sur Gitea
