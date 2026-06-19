@@ -9,7 +9,7 @@ export async function devBackNode(state: typeof GraphState.State) {
   console.log("--- DEV BACK NODE ---");
 
   // 1. Déplacer la carte sur Gitea
-  await updateIssueLabel(state.issueNumber, "status: 2-dev_back");
+  await updateIssueLabel(state.issueNumber, "status: 3-dev");
 
   const projectContext = getProjectContext();
   const architectureContext = getArchitectureContext();
@@ -63,8 +63,9 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
       const match = text.match(/\{[\s\S]*\}/);
       parsed = match ? JSON.parse(match[0]) : JSON.parse(text);
     } catch (e) {
-      console.error("Failed to parse DevBack response, defaulting to raw response", e);
-      break;
+      console.error("Failed to parse DevBack response", e);
+      state.humanFeedback = (state.humanFeedback || "") + "\n\n[ERREUR SYSTÈME] Ta réponse n'était pas un JSON valide. Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans texte additionnel ni markdown.";
+      continue;
     }
 
     if (parsed.status === "need_tests") {

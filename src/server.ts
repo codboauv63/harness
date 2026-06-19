@@ -16,28 +16,31 @@ app.use(express.json());
 
 // --- LOGGING MECANISM ---
 const LOG_FILE = path.join(process.cwd(), 'harness.log');
-// Empty the file on startup to avoid infinite growth
-fs.writeFileSync(LOG_FILE, '');
 
 export function broadcastEvent(event: string, data: any) {
   clients.forEach(client => client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
 }
 
-const origLog = console.log;
-console.log = function(...args: any[]) {
-  origLog.apply(console, args);
-  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
-  fs.appendFileSync(LOG_FILE, msg + '\n');
-  broadcastEvent('log', { message: msg + '\n' });
-};
+if (require.main === module) {
+  // Empty the file on startup to avoid infinite growth
+  fs.writeFileSync(LOG_FILE, '');
 
-const origError = console.error;
-console.error = function(...args: any[]) {
-  origError.apply(console, args);
-  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
-  fs.appendFileSync(LOG_FILE, '[ERROR] ' + msg + '\n');
-  broadcastEvent('log', { message: '[ERROR] ' + msg + '\n' });
-};
+  const origLog = console.log;
+  console.log = function(...args: any[]) {
+    origLog.apply(console, args);
+    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+    fs.appendFileSync(LOG_FILE, msg + '\n');
+    broadcastEvent('log', { message: msg + '\n' });
+  };
+
+  const origError = console.error;
+  console.error = function(...args: any[]) {
+    origError.apply(console, args);
+    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+    fs.appendFileSync(LOG_FILE, '[ERROR] ' + msg + '\n');
+    broadcastEvent('log', { message: '[ERROR] ' + msg + '\n' });
+  };
+}
 // ------------------------
 
 app.post('/api/workflow/start', (req, res) => {
@@ -332,7 +335,9 @@ app.post('/api/workflow/pm/approve', async (req, res) => {
 });
 
 const PORT = 3002;
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Serveur Harness démarré sur le port ${PORT}`);
-});
-server.setTimeout(0);
+if (require.main === module) {
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Serveur Harness démarré sur le port ${PORT}`);
+  });
+  server.setTimeout(0);
+}

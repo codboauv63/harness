@@ -45,11 +45,16 @@ export const workflow = new StateGraph(GraphState)
   .addNode("qa", qaNode)
   .addNode("leadtech", leadtechNode)
 
-  // Start with Planning
-  .addEdge(START, "leadtechPlanning")
-  
-  // Conditional routes
-  .addConditionalEdges("leadtechPlanning", routeFromPlanning, {
+  // 4. Edges & Routing
+workflow.addConditionalEdges(START, (state) => state.startNode, {
+  "leadtechPlanning": "leadtechPlanning",
+  "architect": "architect",
+  "devFront": "devFront",
+  "devBack": "devBack",
+  "qa": "qa",
+  "leadtech": "leadtech"
+});
+workflow.addConditionalEdges("leadtechPlanning", routeFromPlanning, {
     "architect": "architect",
     "devFront": "devFront",
     "devBack": "devBack",
@@ -83,10 +88,13 @@ async function run() {
   console.log("Starting MAS Harness: Dynamic Pipeline...");
 
   const issues = await getAllOpenIssues();
-  const selectedIssues = issues.filter((i: any) => i.labels.some((l: any) => l.name === 'status: 1-selected_for_dev'));
+  // Ne prendre que les tickets qui ont un statut, et qui ne sont pas backlog ni done
+  const selectedIssues = issues.filter((i: any) => 
+    i.labels.some((l: any) => l.name.startsWith('status:') && l.name !== 'status: 0-backlog' && l.name !== 'status: 6-done' && l.name !== 'status: 5-done')
+  );
 
   if (selectedIssues.length === 0) {
-    console.log("Aucun ticket sélectionné pour le développement. (status: 1-selected_for_dev)");
+    console.log("Aucun ticket sélectionné pour le workflow.");
     return;
   }
 
@@ -107,8 +115,38 @@ async function run() {
 
     const comments = await getIssueComments(us.number);
     let humanFeedback = "";
+    const messages: any[] = [];
+    let startNode = "leadtechPlanning";
+    
+    // Déduction du startNode par défaut en fonction du label
+    if (us.labels.some((l: any) => l.name === 'status: 2-plan')) startNode = "leadtechPlanning";
+    if (us.labels.some((l: any) => l.name === 'status: 3-dev')) startNode = "devFront";
+    if (us.labels.some((l: any) => l.name === 'status: 4-qa_testing')) startNode = "qa";
+    if (us.labels.some((l: any) => l.name === 'status: 5-review')) startNode = "leadtech";
+
     if (comments && comments.length > 0) {
-      humanFeedback = comments.map((c: any) => `${c.user?.login || 'User'} : ${c.body}`).join('\n---\n');
+      for (const c of comments) {
+        if (c.body.startsWith('[LEADTECH] Analyse initiale')) {
+          messages.push({ role: 'Leadtech', content: c.body });
+          if (startNode === "leadtechPlanning") startNode = "architect";
+        }
+        else if (c.body.startsWith('[ARCHITECT]')) {
+          messages.push({ role: 'Architect', content: c.body });
+        }
+        else if (c.body.startsWith('[DEV-FRONT]')) {
+          messages.push({ role: 'Dev Front', content: c.body });
+          if (startNode === "devFront") startNode = "devBack"; // Si DevFront a fini, on passe à DevBack
+        }
+        else if (c.body.startsWith('[DEV-BACK]')) {
+          messages.push({ role: 'Dev Back', content: c.body });
+        }
+        else if (c.body.startsWith('[QA-TESTER]')) {
+          messages.push({ role: 'QA Tester', content: c.body });
+        }
+        else if (!c.body.startsWith('[LOG]')) {
+          humanFeedback += `${c.user?.login || 'User'} : ${c.body}\n---\n`;
+        }
+      }
     }
 
     let epicContext = "";
@@ -122,7 +160,9 @@ async function run() {
       userStoryBody: us.body || "",
       boundedContext: us.title, // or extract from milestone title if needed
       humanFeedback,
-      epicContext
+      epicContext,
+      messages,
+      startNode
     };
 
     const result = await app.stream(initialState, {

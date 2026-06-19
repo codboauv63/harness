@@ -151,11 +151,11 @@ export const MAS_LABELS = [
   { name: 'user-story', color: '#10b981' },
   { name: 'status: 0-backlog', color: '#6b7280' },
   { name: 'status: 1-selected_for_dev', color: '#8b5cf6' },
-  { name: 'status: 2-dev_front', color: '#f59e0b' },
-  { name: 'status: 2-dev_back', color: '#f97316' },
-  { name: 'status: 3-qa_testing', color: '#eab308' },
-  { name: 'status: 4-human_review', color: '#ec4899' },
-  { name: 'status: 5-done', color: '#22c55e' }
+  { name: 'status: 2-plan', color: '#c084fc' },
+  { name: 'status: 3-dev', color: '#f59e0b' },
+  { name: 'status: 4-qa_testing', color: '#eab308' },
+  { name: 'status: 5-review', color: '#ec4899' },
+  { name: 'status: 6-done', color: '#22c55e' }
 ];
 
 export async function ensureLabelsExist() {

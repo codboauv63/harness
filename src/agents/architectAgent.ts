@@ -112,8 +112,9 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
       if (match) text = match[0];
       parsed = JSON.parse(text);
     } catch (e) {
-      console.error("Failed to parse Architect response, defaulting to raw response", e);
-      break;
+      console.error("Failed to parse Architect response", e);
+      state.humanFeedback = (state.humanFeedback || "") + "\n\n[ERREUR SYSTÈME] Ta réponse n'était pas un JSON valide. Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans texte additionnel ni markdown.";
+      continue;
     }
 
     if (parsed.status === "need_document" && parsed.documentId) {

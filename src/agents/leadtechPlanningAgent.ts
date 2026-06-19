@@ -2,10 +2,12 @@ import { spawn } from "child_process";
 import { GraphState } from "../state";
 import { getProjectContext, getArchitectureContext } from "../utils/context";
 import { updateIssueLabel, createIssueComment } from "../giteaApi";
+import { runAgyCommand } from "../utils/agy";
 
 export async function leadtechPlanningNode(state: typeof GraphState.State) {
   console.log("--- LEADTECH PLANNING NODE ---");
-  await updateIssueLabel(state.issueNumber, "status: 1-selected_for_dev");
+  // 1. Déplacer la carte sur Gitea
+  await updateIssueLabel(state.issueNumber, "status: 2-plan");
 
   const projectContext = getProjectContext();
   const architectureContext = getArchitectureContext();
@@ -32,28 +34,17 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure ex
 }`;
 
   console.log("[LEADTECH PLANNING] Calling agy...");
-  const parsed = await new Promise<any>((resolve, reject) => {
-    const cleanEnv: any = {};
-    for (const key in process.env) {
-      if (!key.startsWith("npm_") && key !== "INIT_CWD" && key !== "PWD") cleanEnv[key] = process.env[key];
-    }
-    const child = spawn("agy", ["--dangerously-skip-permissions", "-p", prompt], { shell: false, env: cleanEnv, stdio: ["ignore", "pipe", "pipe"] });
-    let fullStdout = "";
-    child.stdout.on("data", (data: any) => fullStdout += data.toString());
-    child.on("close", (code: number) => {
-      if (code !== 0) return reject(new Error("Agy failed"));
-      try {
-        let text = fullStdout.trim();
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) text = match[0];
-        resolve(JSON.parse(text));
-      } catch (err) {
-        console.error("Failed to parse JSON", fullStdout);
-        // Fallback par défaut si l'IA se trompe
-        resolve({ needsArchitect: false, needsFront: true, needsBack: true, analysis: fullStdout });
-      }
-    });
-  });
+  let parsed: any;
+  try {
+    const fullStdout = await runAgyCommand(prompt);
+    let text = fullStdout.trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) text = match[0];
+    parsed = JSON.parse(text);
+  } catch (err) {
+    console.error("Failed to parse JSON", err);
+    parsed = { needsArchitect: false, needsFront: true, needsBack: true, analysis: "Fallback dû à une erreur de parsing." };
+  }
 
   const comment = `[LEADTECH] Analyse initiale & Routage
 **Analyse** : ${parsed.analysis}

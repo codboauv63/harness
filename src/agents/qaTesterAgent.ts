@@ -9,7 +9,7 @@ export async function qaNode(state: typeof GraphState.State) {
   console.log("--- QA TESTER NODE ---");
 
   // 1. Déplacer la carte sur Gitea
-  await updateIssueLabel(state.issueNumber, "status: 3-qa_testing");
+  await updateIssueLabel(state.issueNumber, "status: 4-qa_testing");
 
   const projectContext = getProjectContext();
   const architectureContext = getArchitectureContext();
@@ -61,8 +61,9 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans markdown autour, sui
       const match = text.match(/\{[\s\S]*\}/);
       parsed = match ? JSON.parse(match[0]) : JSON.parse(text);
     } catch (e) {
-      console.error("Failed to parse QA response, defaulting to raw response", e);
-      break;
+      console.error("Failed to parse QA response", e);
+      state.humanFeedback = (state.humanFeedback || "") + "\n\n[ERREUR SYSTÈME] Ta réponse n'était pas un JSON valide. Tu DOIS répondre UNIQUEMENT par un objet JSON valide, sans texte additionnel ni markdown.";
+      continue;
     }
 
     if (parsed.status === "need_tests") {

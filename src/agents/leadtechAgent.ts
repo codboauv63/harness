@@ -8,7 +8,7 @@ export async function leadtechNode(state: typeof GraphState.State) {
   console.log("--- LEADTECH REVIEW NODE ---");
 
   // 1. Déplacer la carte sur Gitea
-  await updateIssueLabel(state.issueNumber, "status: 4-human_review");
+  await updateIssueLabel(state.issueNumber, "status: 5-review");
 
   const projectContext = getProjectContext();
   const architectureContext = getArchitectureContext();
@@ -42,9 +42,9 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure ex
     const match = text.match(/\{[\s\S]*\}/);
     parsed = match ? JSON.parse(match[0]) : JSON.parse(text);
   } catch (e) {
-    console.error("Failed to parse Leadtech response, defaulting to approved");
+    console.error("Failed to parse Leadtech response", e);
+    parsed = { status: "rejected", feedback: "[ERREUR SYSTÈME] Réponse JSON invalide reçue de l'agent. Le code est rejeté par sécurité." };
   }
-
   let modifiedFiles = "";
   try {
     const diff = execSync("git diff --name-only HEAD", { cwd: "/workspace" }).toString().trim();
@@ -61,12 +61,11 @@ Tu DOIS répondre UNIQUEMENT par un objet JSON valide suivant cette structure ex
   await createIssueComment(state.issueNumber, logBody);
 
   if (parsed.status === "approved") {
-    // Déplacer la carte sur "Done" sur Gitea
-    await updateIssueLabel(state.issueNumber, "status: 5-done");
+    // Laisser la carte dans "Review" pour la validation humaine finale
     return { overallStatus: "approved", messages: [{ role: "leadtech", content: parsed.feedback }] };
   } else {
-    // Renvoyer en Dev Back pour l'exemple
-    await updateIssueLabel(state.issueNumber, "status: 2-dev_front");
+    // Renvoyer en Dev Back/Front pour correction
+    await updateIssueLabel(state.issueNumber, "status: 3-dev");
     return { overallStatus: "rejected", leadtechFeedback: [parsed.feedback], messages: [{ role: "leadtech", content: parsed.feedback }] };
   }
 }

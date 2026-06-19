@@ -26,20 +26,32 @@ export async function runAgyCommand(prompt: string): Promise<string> {
 
     let fullStdout = "";
     let fullStderr = "";
+    let lastDataTime = Date.now();
+
+    const keepAlive = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - lastDataTime) / 1000);
+      if (elapsed > 15) {
+        process.stdout.write(`\n\x1b[90m...l'agent réfléchit toujours (${elapsed}s sans nouveau texte)...\x1b[0m\n`);
+        lastDataTime = Date.now(); // reset to avoid spamming every second
+      }
+    }, 10000);
 
     child.stdout.on("data", (data: any) => {
+      lastDataTime = Date.now();
       const text = data.toString();
       fullStdout += text;
       process.stdout.write(`\x1b[37m${text}\x1b[0m`);
     });
 
     child.stderr.on("data", (data: any) => {
+      lastDataTime = Date.now();
       const text = data.toString();
       fullStderr += text;
       process.stderr.write(`\x1b[33m${text}\x1b[0m`);
     });
 
     child.on("close", (code: number) => {
+      clearInterval(keepAlive);
       console.log(`\n\x1b[32m=====================================================\x1b[0m\n`);
       if (code !== 0) {
         console.warn("[AGY STDERR]:", fullStderr);
@@ -50,6 +62,7 @@ export async function runAgyCommand(prompt: string): Promise<string> {
     });
 
     child.on("error", (err: any) => {
+      clearInterval(keepAlive);
       console.error("[AGY ERROR]:", err.message);
       reject(err);
     });
